@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Card from './Card';
 import Deck from './Deck';
 import Hand from './Hand';
-
-const deck = new Deck();
 
 const Game = () => {
   const [score, setScore] = useState(0);
@@ -11,32 +8,17 @@ const Game = () => {
   const [playerCards, setPlayerCards] = useState([]);
   const [dealerCards, setDealerCards] = useState([]);
   const [message, setMessage] = useState('');
-  const [deck, setDeck] = useState(new Deck());
+  const [gameDeck, setGameDeck] = useState(new Deck());
 
   useEffect(() => {
-    setPlayerCards([deck.drawCard(), deck.drawCard()]);
-    setDealerCards([deck.drawCard(), deck.drawCard()]);
-  }, [deck]);
+    setPlayerCards([gameDeck.drawCard(), gameDeck.drawCard()]);
+    setDealerCards([gameDeck.drawCard(), gameDeck.drawCard()]);
+  }, [gameDeck]);
 
-  const getPlayerTotal = () => {
+  const getPlayerTotal = (cards) => {
     let total = 0;
     let hasAce = false;
-    for (let card of playerCards) {
-      if (card.value === 'A') {
-        hasAce = true;
-      }
-      total += parseInt(card.rank, 10);
-    }
-    if (hasAce && total <= 11) {
-      total += 10;
-    }
-    return total;
-  };
-
-  const getDealerTotal = () => {
-    let total = 0;
-    let hasAce = false;
-    for (let card of dealerCards) {
+    for (let card of cards) {
       if (card.value === 'A') {
         hasAce = true;
       }
@@ -49,7 +31,7 @@ const Game = () => {
   };
 
   const handleHit = () => {
-    setPlayerCards([...playerCards, deck.drawCard()]);
+    setPlayerCards([...playerCards, gameDeck.drawCard()]);
   };
 
   const handleStand = () => {
@@ -58,35 +40,36 @@ const Game = () => {
 
   useEffect(() => {
     if (isGameOver) {
-      while (getDealerTotal() < 17) {
-        deck.shuffle();
-        setDealerCards([...dealerCards, deck.drawCard()]);
+      let dealerCardsCopy = [...dealerCards];
+      let dealerTotal = getPlayerTotal(dealerCardsCopy);
+      while (dealerTotal < 17) {
+        dealerCardsCopy = [...dealerCardsCopy, gameDeck.drawCard()];
+        dealerTotal = getPlayerTotal(dealerCardsCopy);
       }
-  
-      const playerTotal = getPlayerTotal();
-      const dealerTotal = getDealerTotal();
-  
+      setDealerCards(dealerCardsCopy);
+      const playerTotal = getPlayerTotal(playerCards);
+      const newDealerTotal = getPlayerTotal(dealerCardsCopy);
       if (playerTotal > 21) {
         setMessage('You busted! Dealer wins!');
         setScore(score - 1);
-      } else if (dealerTotal > 21) {
+      } else if (newDealerTotal > 21) {
         setMessage('Dealer busted! You win!');
         setScore(score + 1);
-      } else if (playerTotal > dealerTotal) {
+      } else if (playerTotal > newDealerTotal) {
         setMessage('You win!');
         setScore(score + 1);
-      } else if (playerTotal < dealerTotal) {
+      } else if (playerTotal < newDealerTotal) {
         setMessage('Dealer wins!');
         setScore(score - 1);
       } else {
         setMessage('It\'s a tie!');
       }
     }
-  }, [isGameOver, deck, dealerCards, getPlayerTotal, getDealerTotal, score]);
+  }, [isGameOver, dealerCards, dealerCards.length, playerCards, gameDeck, score]);
 
   const handleNewGame = () => {
     const newDeck = new Deck();
-    setDeck(newDeck);
+    setGameDeck(newDeck);
     setPlayerCards([newDeck.drawCard(), newDeck.drawCard()]);
     setDealerCards([newDeck.drawCard(), newDeck.drawCard()]);
     setIsGameOver(false);
@@ -100,12 +83,12 @@ const Game = () => {
         <Hand cards={playerCards} />
         <button onClick={handleHit} disabled={isGameOver}>Hit</button>
         <button onClick={handleStand} disabled={isGameOver}>Stand</button>
-        <p>Total: {getPlayerTotal()}</p>
+        <p>Total: {getPlayerTotal(playerCards)}</p>
       </div>
       <div>
         <h2>Dealer</h2>
         <Hand cards={dealerCards} />
-        <p>Total: {getDealerTotal()}</p>
+        <p>Total: {getPlayerTotal(dealerCards)}</p>
       </div>
       <div>
         <p>Score: {score}</p>

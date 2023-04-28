@@ -24,7 +24,7 @@ class Deck {
           this.cards.push({ suit, ...value });
         }
       }
-      this.shuffle();
+      this.reset();
     }
   
     shuffle() {
